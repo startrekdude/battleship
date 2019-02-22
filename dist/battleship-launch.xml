@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>true</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>Battleship.jar</jar>
+  <outfile>C:\Eclipse\workspace\Battleship\dist\appdir\Battleship.exe</outfile>
+  <errTitle></errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl>http://www.oracle.com/technetwork/java/javase/downloads/java-archive-javase10-4425482.html</downloadUrl>
+  <supportUrl></supportUrl>
+  <stayAlive>false</stayAlive>
+  <restartOnCrash>false</restartOnCrash>
+  <manifest></manifest>
+  <icon>C:\Eclipse\workspace\Battleship\dist\icon.ico</icon>
+  <singleInstance>
+    <mutexName>Battleship8675309</mutexName>
+    <windowTitle>Battleship</windowTitle>
+  </singleInstance>
+  <jre>
+    <path>jre-10.0.2</path>
+    <bundledJre64Bit>true</bundledJre64Bit>
+    <bundledJreAsFallback>false</bundledJreAsFallback>
+    <minVersion>10.0.2</minVersion>
+    <maxVersion>10.0.99</maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <runtimeBits>64/32</runtimeBits>
+  </jre>
+  <versionInfo>
+    <fileVersion>1.1.1.0</fileVersion>
+    <txtFileVersion>1.1.1</txtFileVersion>
+    <fileDescription>Battleship Game</fileDescription>
+    <copyright>(C) Sam Haskins 2018</copyright>
+    <productVersion>1.1.1.0</productVersion>
+    <txtProductVersion>1.1.1</txtProductVersion>
+    <productName>Battleship Game</productName>
+    <companyName>Sam Haskins</companyName>
+    <internalName>Battleship</internalName>
+    <originalFilename>Battleship.exe</originalFilename>
+    <trademarks></trademarks>
+    <language>ENGLISH_US</language>
+  </versionInfo>
+</launch4jConfig>

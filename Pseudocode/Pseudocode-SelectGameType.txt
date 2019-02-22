@@ -1,0 +1,79 @@
+A dialog to allow the user to select whether they'd like to
+play against the AI or another human. Uses RadioButtons, and
+returns the result via a Consumer<Boolean> onComplete
+
+public Consumer<Boolean> onComplete
+
+private ButtonGroup selection
+
+Constructor
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The Frame that this will modal for
+Outputs: Creates a new SelectGameType with a standard layout
+Description:
+    Creates a SelectGameType with radio buttons for human and AI
+Begin
+    // Make this dialog modal
+    Super with parent and Dialog->ModalityType->ApplicationModal
+    
+    Invoke setTitle with "Select Type of Game"
+    Invoke setSize with 300 and 200
+    Invoke setLocationRelativeTo with parent
+    Invoke setResizable with false
+    
+    // Don't let the user use the X button
+    Invoke setDefaultCloseOperation with JDialog->DoNothingOnClose
+    
+    // Create the layout
+    Let root, a JPanel, be a new JPanel
+    Invoke root->setLayout with a new BoxLayout with (root and BoxLayout->YAxis)
+    Invoke getContentPane->add with root
+    
+    // Add a label with a title size, bolded
+    Let title, a JLabel, be a new JLabel with "Select Type of Game"
+    Invoke title->setFont with a new Font with ("Sans", Font->Bold, and 18)
+    Invoke title->setAlignmentX with JComponent->CenterAlignment
+    Invoke root->add with title
+    
+    // Create radio buttons for AI and human
+    Let selection be a new ButtonGroup
+    
+    Let ai, a JRadioButton, be a new JRadioButton with "Game against the AI"
+    Invoke ai->setActionCommand with "AI"
+    Invoke ai->setSelected with true
+    Invoke ai->setAlignmentX with JComponent->CenterAlignment
+    Invoke selection->add with ai
+    Invoke root->add with ai
+    
+    Let human, a JRadioButton, be a new JRadioButton with "Two-player game"
+    Invoke human->setActionCommand with "Human"
+    Invoke human->setAlignment with JComponent->CenterAlignment
+    Invoke selection->add with human
+    Invoke root->add with selection
+    
+    // Add the button
+    Let button, a JButton, be ActionUtils->button with "Select" and this->complete
+    Invoke button->setAlignmentX with JComponent->CenterAlignment
+    Invoke root->add with ActionUtils->button with ("Select" and this->complete)
+End
+
+Method complete
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The user's selection
+Outputs: Returns whether the user is playing AI to onComplete
+Description:
+    Evaluates whether the user would like to play against the AI, and
+    returns the result via onComplete
+Begin
+    If onComplete is not null:
+        If selection->getSelection->getActionCommand is equal to "AI":
+            Invoke onComplete->accept with true
+        Else:
+            Invoke onComplete->accept with false
+    
+    // Close the dialog
+    Invoke setDefaultCloseOperation with JDialog->DisposeOnClose
+    Invoke dispatchEvent with a new WindowEvent with (this and WindowEvent->WindowClosing)
+End

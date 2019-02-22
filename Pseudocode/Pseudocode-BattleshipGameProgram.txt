@@ -1,0 +1,50 @@
+A class that contains main. Responsible for setting up the Swing environment,
+registering the Master Error Handler, and starting a new BattleshipGame
+
+Method main
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: No direct inputs
+Outputs: Starts a new BattleshipGame after registering the Master Error Handler
+Description:
+    The entry point for the program. Sets the Master Error Handler, loads
+    the Swing theme, and creates and shows a new BattleshipGame
+Begin
+    // Register the Master Error Handler
+    Invoke Thread->setDefaultUncaughtExceptionHandler with masterErrorHandler
+    
+    Try to:
+        Invoke UIManager->setLookAndFeel with "javax.swing.plaf.nimbus.NimbusLookAndFeel"
+    If that fails:
+        Tell the user
+    
+    Let window, a BattleshipGame, be a new BattleshipGame
+    Invoke window->setDefaultCloseOperation with JFrame->ExitOnClose
+    // Maximize by default
+    Invoke window->setExtendedState with window->getExtendedState bitwise-or Frame->MaximizedBoth
+    Invoke window->setVisible with true
+End
+
+Method masterErrorHandler
+Name: Sam Haskins
+Date: 11/2/2018
+Inputs: Accepts a Thread, t, and a Throwable, e
+Outputs: Informs the user of the error
+Description:
+    The master error handler of the program
+    Swing creates a separate thread to handle UI activities on; as such,
+    exceptions may not reach main. Here we create an uncaught exception handler
+    to handle all the program's exceptions in a more graceful way than Java
+    would by default
+Begin
+    // Cleanup any windows
+    Starting a list comprehension over Windows->getWindows
+        forEach (w) do w->dispose
+
+    Tell the user
+    Print a stack trace to the console
+    Invoke JOptionPane->showMessageDialog with null and (ThrowableUtils->getStackTrace with e) and
+        "An error occurred" and JOptionPane->ErrorMessage
+    
+    Invoke System->exit with -1
+End

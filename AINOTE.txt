@@ -1,0 +1,91 @@
+This is a note describing how Battleship's player AI is implemented and why.
+
+Battleship's AI has the following goals:
+    1) Play with the same information that would be available to a human player
+    2) Be fun to play against.
+       This means that the AI must be flawed, i.e. suboptimal and not
+       superlatively difficult or impossible to beat.
+       On the other hand, the AI must also not be too easy to beat.
+       It should present a good challenge.
+    3) Operate fast. This means it can't exhaustively consider every
+       possible state, like a Tic-Tac-Toe AI might.
+
+The AI has the following functions:
+    1) Place next ship
+    2) Fire on opponent
+The operation of these functions and the reasoning behind these choices
+are outlined in this document.
+
+
+Function 1: Place next ship
+
+Observations:
+    1) The AI must not be predictable when placing ships. This would make
+       the AI too easy to beat, as the player would "know where to look"
+
+Strategy:
+The AI will place all of its ships randomly, using random rotations.
+
+
+Function 2: Fire on ship
+
+Observations:
+    1) The AI cannot make any assumptions regarding the locations the human
+       player has placed their ships. As such, it is best to design a strategy
+       as if the ships were randomly placed.
+        1.1) This means that the AI can act as if the ship placements are likely
+             to have an even distribution over the playing board.
+    2) A good strategy will have two components: Finding a ship and sinking a ship
+    3) When finding a ship, half of the squares don't matter. If the AI only fires
+       in a checkboard pattern, it is guaranteed to find at least one square from
+       every ship. The smallest ship, the Destroyer, is size two and as such cannot
+       hide from a checkboard search pattern.
+        1) As an extension of this strategy, the AI can move to searching only one
+           in every three squares after the opponent's destroyer is removed from play/
+           This, however, would make the AI very difficult to play against for
+           beginners, and, as such, it has not been implemented.
+
+Strategy:
+The AI's firing strategy is subdivided into two components: search & sink.
+The search algorithm will run until a ship is hit, after which the sink
+algorithm will run, starting from the hit, until a ship is sunk.
+
+Search Strategy:
+The AI's search strategy, assuming an even distribution of the enemy's ships,
+conceptually divides the board into four 25-square quadrants and takes turns
+firing in each in a round-robin manner. It only fires on the squares that
+would be white on a chess board--that is, the squares that (x % 2) == (y %2)
+would be true for.
+
+If all the eligible squares in a quadrant have been fired on, the algorithm
+continues to the next quadrant.
+If all eligible squares in all four quadrants have been fired on, the algorithm
+randomly picks a square that has not been fired on.
+
+When a ship is it, the sink strategy is run until a ship is sunk, after which
+the search strategy will run again.
+
+Sink Strategy:
+Most ships in Battleship follow a straight line. Therefore, it would be
+advantageous for the AI if it were able to find then follow such a straight line.
+The Battleship AI, therefore, has the concept of a "delta." It is, simply,
+the difference in position between the last ship square hit and the current
+ship square hit. The AI has the option of following the delta.
+
+The sink AI has multiple subroutines, described below.
+
+Establish a delta:
+    1) Start by hitting the squares above, to the left, below, and to the right
+       of the ship position, in that order
+    2) If all of these squares have been hit, pick an adjacent "hit ship" square
+       and find a delta starting from there
+    3) If the shot hit, record the delta
+
+Follow the delta:
+    1) Hit the position one delta away from the current position using the established delta
+    2) If the shot misses, discard the delta
+
+Invert the delta:
+    1) Attempt this after the first time the delta is lost.
+    2) Attempt to establish a delta on the origin using the opposite direction of the
+       first delta (e.g. left -> right).

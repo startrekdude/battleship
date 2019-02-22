@@ -1,0 +1,20 @@
+Battleship handles the following types of errors and exceptions,
+when it encounters them:
+    - Errors setting the look & feel of the application
+    - In the AI:
+        - Doesn't make moves when these moves would be off the board
+        - Recovers gracefully when it loses the trail of a ship
+        - Errors placing a ship at a location
+        - No remaining squares to search for ships at
+    - Invalid co-ordinates when firing
+    - Firing prior to all ships being placed
+    - A ship being placed such that it exits the board or overlaps
+      with another ship
+    - Invalid player when creating a BattleshipBoardDisplay
+    - Mouse click not on the Battleship board
+    - Rotation loops around
+    - Window resizing after game is in progress
+    - min > max when getting a random number in a range
+
+It also displays unrecoverable errors in a somewhat nicer way than Java does
+by default (see BattleshipGameProgram->masterErrorHandler)

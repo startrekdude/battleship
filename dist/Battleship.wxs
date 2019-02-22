@@ -1,0 +1,108 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <Product Name='Battleship' Manufacturer='Sam Haskins'
+        Id='026375B9-7C91-4860-B5A4-813C5E327D94' 
+        UpgradeCode='F1DF0854-96AB-452E-9C1E-4A65E39DD7D9'
+        Language='1033' Codepage='1252' Version='1.1.1'>
+		
+		<Package Id='*' Description="Sam Haskins's Battleship 1.1.1 Installer"
+			Manufacturer='Sam Haskins' InstallerVersion='200' Languages='1033'
+			Compressed='yes' SummaryCodepage='1252' />
+		<Media Id="1" Cabinet="Battleship.cab" EmbedCab="yes" />
+		
+		<Directory Id='TARGETDIR' Name='SourceDir'>
+			<Directory Id="ProgramFiles64Folder">
+				<Directory Id="INSTALLDIR" Name="Battleship" />
+			</Directory>
+			
+			<Directory Id="ProgramMenuFolder" Name="Programs" />
+			<Directory Id="DesktopFolder" Name="Desktop" />
+		</Directory>
+		
+		<ComponentGroup Id="BattleshipProgramComplete">
+			<!-- defined in BattleshipProgram.wxs, made by heat -->
+			<ComponentGroupRef Id="BattleshipProgram" />
+			
+			<Component Id="DesktopShortcut" Directory="DesktopFolder"
+				Guid="0F6E5C7B-246B-46EF-892C-C713A0DC1026">
+				<Shortcut Id="BattleshipDesktopShortcut"
+					Name="Battleship"
+					Target="[#filD7B94D34F9A8D7F73CE2FA3EA4185DB0]"
+					Icon="BattleshipIcon" IconIndex="0"
+					WorkingDirectory="INSTALLDIR" />
+				<RegistryValue Root="HKCU" Key="Software\Battleship8675309"
+					Name="DesktopKeyPath" Type="integer" Value="1"
+					KeyPath="yes" />
+			</Component>
+						
+			<Component Id="StartShortcut" Directory="ProgramMenuFolder"
+				Guid="108706B4-FE48-4854-89C5-B32D8C1A543B">
+				<Shortcut Id="BattleshipStartShortcut"
+					Name="Battleship"
+					Target="[#filD7B94D34F9A8D7F73CE2FA3EA4185DB0]"
+					Icon="BattleshipIcon" IconIndex="0"
+					WorkingDirectory="INSTALLDIR" />
+				<RegistryValue Root="HKCU" Key="Software\Battleship8675309"
+					Name="StartKeyPath" Type="integer" Value="1" KeyPath="yes" />
+			</Component>
+			
+		</ComponentGroup>
+		
+		<Feature Id="Battleship" Level="1" ConfigurableDirectory="INSTALLDIR">
+			<ComponentGroupRef Id="BattleshipProgramComplete" />
+		</Feature>
+		
+		<Icon Id="BattleshipIcon" SourceFile="Battleship.exe" />
+		
+		<Property Id="ARPPRODUCTICON" Value="BattleshipIcon" Secure="yes" />
+		<Property Id="ARPNOREPAIR" Value="yes" Secure="yes" />
+		
+		<Condition Message="Administrator privileges are required to install Battleship.">
+			Privileged
+		</Condition>
+		<Condition Message="Battleship installer is only supported on 64-bit versions of Windows 7 or greater.">
+			VersionNT64 >= 601
+		</Condition>
+		
+		<!-- Let the user launch Battleship after the install completes -->
+		<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
+		<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+			Value="Launch Battleship" />
+		<Property Id="WixShellExecTarget"
+			Value="[#filD7B94D34F9A8D7F73CE2FA3EA4185DB0]" />
+		<CustomAction Id="LaunchApplication" BinaryKey="WixCA"
+			DllEntry="WixShellExec" Impersonate="yes" />
+		
+		<!-- The installer user interface -->
+		<Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+		<UI>
+			<UIRef Id="WixUI_InstallDir" />
+			
+			<Publish Dialog="WelcomeDlg"
+				Control="Next"
+				Event="NewDialog"
+				Value="InstallDirDlg"
+				Order="5">1</Publish>
+			<Publish Dialog="InstallDirDlg"
+				Control="Back"
+				Event="NewDialog"
+				Value="WelcomeDlg"
+				Order="5">1</Publish>
+			
+			<Publish Dialog="ExitDialog"
+				Control="Finish"
+				Event="DoAction"
+				Value="LaunchApplication">
+				WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and not Installed
+			</Publish>
+		</UI>
+		
+		<!-- Tell user that TARGETDIR *must* be set to do an administrative install -->
+		<CustomAction Id="CheckTARGETDIR"
+			Error="TARGETDIR must be set to perform an administrative install" />
+		
+		<AdminExecuteSequence>
+			<Custom Sequence="1" Action="CheckTARGETDIR" />
+		</AdminExecuteSequence>
+	</Product>
+</Wix>

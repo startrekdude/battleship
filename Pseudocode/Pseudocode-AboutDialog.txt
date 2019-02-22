@@ -1,0 +1,67 @@
+A generic about dialog for Swing programs. Displays the program's icon,
+information about the program, and information about the environment.
+
+Constructor
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: A Frame to modal for, the program's Icon, the name, description, author, version, and extra info to display
+Outputs: Creates an AboutDialog with the specified information
+Description:
+    Builds an about dialog displaying the provided information and icon
+Begin
+    // Modal for the frame
+    Super with frame and Dialog->ModalityType->ApplicationModal
+    
+    Invoke setTitle with a title constructed from name
+    Invoke setSize with 600 and 400
+    Invoke setResizable with false
+    
+    // Create and add the root panel, using a horizontal layout
+    Let root, a JPanel, be a new JPanel
+    Invoke root->setLayout with a new BoxLayout with (root and BoxLayout->XAxis)
+    Invoke getContentPane->add with root
+    
+    // Create the left panel, with the icon and close button
+    Let left, a JPanel, be a new JPanel
+    Invoke left->setLayout with a new BoxLayout with (left and BoxLayout->YAxis)
+    
+    Let iconDisplay, a JLabel, be a new JLabel with icon
+    Invoke iconDisplay->setMaximumSize with a new Dimension with (256 and 256)
+    Invoke iconDisplay->setAlignmentX with JComponent->CenterAlignment
+    Invoke left->add with iconDisplay
+    
+    // We wrap the close button in another JPanel to add a margin
+    Let closeHolder, a JPanel, be a new JPanel
+    Invoke closeHolder->setBorder with BorderFactory->createEmptyBorder with (30, 0, 0, and 0)
+    
+    Let close, a JButton, be ActionUtils->button with "Close and this->close
+    Invoke close->setAlignmentX with JComponent->CenterAlignment
+    
+    Invoke closeHolder->add with close
+    Invoke left->add with closeHolder
+    
+    Invoke root->add with left
+    
+    Let dialogText, a String, be the result of constructing the about dialog text
+    
+    // Use HTML for the about message
+    Let pane, a JEditorPane, be a new JEditorPane
+    Invoke pane->setEditable with false
+    
+    Invoke pane->setContentType with "text/html"
+    Invoke pane->setText with dialogText
+    
+    Invoke root->add with a new JScrollPane with pane
+End
+
+Method close
+Name: Sam Haskins
+Date: 11/13/2018
+Inputs: None
+Outputs: Closes the dialog
+Description:
+    Posts a close event to the dialog's message queue, acting as if
+    the user pressed the X button
+Begin
+    Invoke dispatchEvent with a new WindowEvent with (this and WindowEvent->WindowClosing)
+End

@@ -1,0 +1,19 @@
+So, the Throwable class in the Java standard library has a method
+to print the stack trace to standard out, but no method to just get
+the stack trace as a String, for some reason. This becomes a problem
+in, for example, graphical programs where a user needs to be informed
+of an error by a message box
+
+Method getStackTrace
+Name: Sam Haskins
+Date: 11/1/2018
+Inputs: A Throwable, e, to get the stack trace of
+Outputs: The Throwable's stack trace as a String
+Description:
+    Returns the Throwable's stack trace, as printed by printStackTrace,
+    as a String
+Begin
+    Let sw, a StringWriter, be a new StringWriter
+    Invoke e->printStackTrace with a new PrintWriter with (sw)
+    Return sw->toString
+End

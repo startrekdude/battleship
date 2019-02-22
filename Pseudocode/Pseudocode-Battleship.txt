@@ -1,0 +1,261 @@
+A class that implements the game logic of Battleship.
+Uses a 10-by-10 board with 5 ship types
+Consumers can use placeShip and fire, and it also
+exposes its data structures for display
+
+Subclass Board
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: Starts with default board state and tracks changes
+Outputs: Stores a Battleship board for a player
+Description:
+    Stores the Battleship board for one player;
+    this includes the 10-by-10 BattleshipCell board
+    and the health of all the ships
+Begin
+    public BattleshipCell[][] is a new BattleshipCell[10][10]
+    private int aircraftCarrierHealth is 5
+    private int battleshipHealth is 4
+    private int cruiserHealth is 3
+    private int submarineHealth is 3
+    private int destroyerHealth is 2
+End
+
+public Board[] boards
+public HitmapCell[][][] hitmaps is a new HitmapCell[2][10][10]
+public int turn is 0
+
+private BattleshipCell nextShip is BattleshipCell->AircraftCarrier
+
+Constructor
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: None
+Outputs: Creates a Battleship with empty hitmaps and boards
+Description:
+    Initialize all Battleship fields with default values,
+    and fills in the hitmaps with HitmapCell->Empty and the boards
+    with BattleshipCell->Empty
+Begin
+    Let boards be a new Board[] with { a new Board, a new Board }
+    
+    // Fill in all the cells with empty values
+    For every index 0-1 (i):
+        For every index 0-9 (j):
+            For every index 0-9 (k):
+                Let boards[i]->board[j][k] be BattleshipCell->Empty
+                Let hitmaps[i][j][k] be BattleshipCell->Empty
+End
+
+Method fire
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The row and column to fire at
+Outputs: Performs the move, updating the hitmap and board. Returns NoResult, Win, or SunkShip
+Description:
+    First, makes sure the row and column parameters are in the required range
+    Then, fires! Updates the opponent's hitmap and the health values in the board
+    Returns whether a ship was sunk and whether the player won
+    Advances to the next turn, as well
+Begin
+    // Check the co-ordinates range
+    If row is greater than nine or row is less than zero or
+       column is greater than nine or column is less than zero:
+        Throw a new IllegalArgumentException
+    
+    // Make sure all ships are placed
+    If allShipsPlaced is equal to false:
+        Throw a new IllegalStateException
+    
+    Let opponent, an int, be (turn plus one) modulo two
+    Let board, a Board, be boards[opponent]
+    Let mapCell, a BattleshipCell, be board->board[row][column]
+    Let hitCell, a HitmapCell, be hitmaps[opponent][row][column]
+    
+    // Unless we hit a ship, do not return SunkShip
+    Let shipHealth, an int, be 999
+    
+    // Only take further action if the cell hasn't already been hit
+    // ...otherwise a player could hit the same ship's cell multiple times and sink it
+    If hitCell is equal to HitmapCell->Empty:
+        If mapCell is not equal to BattleshipCell->Empty:
+            // We hit a ship; handle this
+            Let hitmaps[opponent][row][column] be HitmapCell->HitShip
+            Switch mapCell
+                Case AircraftCarrier:
+                    Let shipHealth and board.aircraftCarrierHealth be board.aircraftCarrierHealth - 1
+                    Break
+                Case Battleship:
+                    Let shipHealth and board.battleshipHealth be board.battleshipHealth - 1
+                    Break
+                Case Cruiser:
+                    Let shipHealth and board.cruiserHealth be board.cruiserHealth - 1
+                    Break
+                Case Submarine:
+                    Let shipHealth and board.submarineHealth be board.submarineHealth - 1
+                    Break
+                Case Destroyer:
+                    Let shipHealth and board.destroyerHealth be board.destroyerHealth - 1
+                    Break
+        Otherwise:
+            // Didn't hit a ship; indicate this
+            Let hitmaps[opponent][row][column] be HitmapCell->Hit
+    
+    // Check for a win state
+    // If the player won, do not advance the turn
+    If board.aircraftCarrierHealth is equal to 0 and board.battleshipHealth is equal to 0
+       and board.cruiserHealth is equal to 0 and board.submarineHealth is equal to 0
+       and board.destroyerHealth is equal to 0:
+        Return BattleshipMove->Win
+    
+    // Rollover the turn
+    Let turn be opponent
+    
+    // If we sunk a ship, return that. Otherwise NoResult
+    If shipHealth is equal to 0:
+        Return BattleshipMove->SunkShip
+    Otherwise:
+        Return BattleshipMove->NoResult
+End
+
+Method cloneState
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: Uses the Battleship's fields
+Outputs: A clone of the Battleship object
+Description:
+    Makes an entirely new, yet identical, Battleship object. Used to
+    preview ship placements
+Begin
+    Let battleship, a Battleship, be a new Battleship
+    Let battleship's boards be cloneBoards
+    Let battleship's turn be turn
+    Let battleship's nextShip be ship
+    // A three-level deep clone, this'll be fun
+    Let battleship's hitmaps be
+        Starting an array comprehension over hitmaps
+        Map with:
+            (hitmap) -> Starting an array comprehension over hitmap
+                        Map with (row) -> Invoke row->clone
+                        To array
+            To array
+    Return battleship
+End
+
+Method cloneBoards
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: Uses the boards field
+Outputs: A clone of the boards field, suitable for experimentation
+Description:
+    Deep-clones the boards field. Used to undo partial ship placements, and in cloneState
+Begin
+    Let newBoards, a Board[], a be new Board[2]
+    For every index 0-1 (i):
+        Let board, a Board, be a new Board
+        Let board's aircraftCarrierHealth be board[i]'s aircraftCarrierHealth
+        Let board's battleshipHealth be board[i]'s battleshipHealth
+        Let board's cruiserHealth be board[i]'s cruiserHealth
+        Let board's submarineHealth be board[i]'s submarineHealth
+        Let board's destroyerHealth be board[i]'s destroyerHealth
+        Let board's board be:
+            Starting an array comprehension over board[i]'s board
+            Map with (row) -> Invoke row->clone
+            To array
+        Let newBoards[i] be board
+    Return newBoards
+End
+
+Invoke drawShip
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The row, column, and rotation to draw a ship at
+Outputs: Draws the ship or throws an exception
+Description:
+    Contains the code to draw each type of ship. Only invoked
+    from placeShip, which does parameter validation
+Begin
+    Let newBoards, a Board[], be cloneBoards
+    Let marker, a Marker, be a new Marker with newBoards[turn]->board, rotation, row, column, and nextShip
+    Switch on nextShip:
+        Case AircraftCarrier:
+            Invoke ((marker->draw with 1)->rotate with 1)->draw with 4
+            Break
+        Case Battleship:
+            Invoke marker->draw with 4
+            Break
+        Case Cruiser:
+        Case Submarine:
+            Invoke marker->draw with 3
+            Break
+        Case Destroyer:
+            Invoke marker->draw with 2
+            Break
+    // The previous completed without error, good to go
+    Let this's boards be newBoards
+End
+
+Method placeShip
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The row, column, and rotation to place a ship at
+Outputs: A Boolean indicating whether the ship was placed; if true, advances to the next turn
+Description:
+    If allShipsPlaced, returns false
+    First, ensures the rotation is valid (0-3) and throws IllegalArgumentException
+    Next, tries to place the ship. If it fails (not entirely on the board), returns false
+    (Also fails if it intersects with another ship)
+    If it succeeds, advances to the next turn and returns true
+    (If turn == 1, also advances to the next ship)
+Begin
+    // If all ships have been placed, don't place more
+    If allShipsPlaced is equal to true:
+        Return false
+    
+    // Make sure the rotation is valid
+    If rotation is less than zero or rotation is greater than 3:
+        Throw a new IllegalArgumentException
+        
+    // Try to use a Marker to draw the ship
+    // If it fails, it throws an exception (either out-of-bounds or illegal argument)
+    Try to:
+        Invoke drawShip with row, column, and rotation
+    If that fails:
+        Return false
+    
+    // Advance the turn
+    Let turn be (turn plus one) modulo 2
+    
+    // If turn is 0, go to the next type of ship
+    Switch on nextShip (a BattleshipCell):
+        Case AircraftCarrier:
+            Let nextShip be BattleshipCell->Destroyer
+            Break
+        Case Battleship:
+            Let nextShip be BattleshipCell->Cruiser
+            Break
+        Case Cruiser:
+            Let nextShip be BattleshipCell->Submarine
+            Break
+        Case Submarine:
+            Let nextShip be BattleshipCell->Destroyer
+            Break
+        Case Destroyer:
+            // No more ships to place
+            Let nextShip be BattleshipCell->Empty
+            Break
+    
+    Return true
+End
+
+Method allShipsPlaced
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: None
+Outputs: Whether all ships in the Battleship have been placed
+Description:
+    Returns whether all the game's ships have already been placed
+    (i.e. nextShip is equal to BattleshipCell->Empty)
+Begin
+    Return whether nextShip is equal to BattleshipCell->Empty
+End

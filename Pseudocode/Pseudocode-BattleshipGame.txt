@@ -1,0 +1,379 @@
+The Battleship Game window. Accepts user input and advances the game when appropriate.
+The main window of the Battleship application; uses a Battleship class to store game state
+
+private Battleship game
+private BattleshipAI ai
+private int rotation
+private Boolean isPlayingAI
+
+private JPanel root
+private BattleshipBoardDisplay[] displays
+
+Constructor
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: None
+Outputs: Builds a BattleshipGame with all required user interface elements
+Description:
+    Builds a BattleshipGame with a menu bar and two BattleshipBoardDisplay's, one for each player
+Begin
+    Invoke setTitle with "Battleship"
+    Invoke setSize with 900 and 675
+    
+    // Set the icon (see THIRD-PARTY.txt)
+    Invoke setIconImage with ImageUtils->load with ("icon.png")
+    
+    // When shown, invoke selectGameType
+    Invoke addComponentListener with a new ComponentAdapter with:
+        componentShown -> selectGameType
+    
+    // Create the menu
+    Let menu, a JMenuBar, be a new JMenuBar
+    
+    Let battleship, a JMenu, be a new JMenu with "Battleship"
+    Invoke battleship->add with ActionUtils->menu with ("Select game type" and this->selectGameType)
+    Invoke battleship->add with ActionUtils->menu with ("Start new game" and this->startNewGame)
+    Invoke battleship->add with ActionUtils->menu with ("Exit" and this->exit)
+    Invoke menu->add with battleship
+    
+    Let rotation be 0
+    
+    Let rotate, a JMenu, be a new JMenu with "Rotate"
+    Invoke rotate->add with ActionUtils->menu with ("Forward" and () -> (Let rotation be (rotation plus one) modulo 4))
+    Invoke rotate->add with ActionUtils->menu with ("Backward" and () -> (Let rotation be (rotation plus three) modulo 4))
+    Invoke menu->add with rotate
+    
+    Let help, a JMenu, be a new JMenu with "Help"
+    Invoke help->add with ActionUtils->menu with ("User Guide" and this::help)
+    Invoke help->add with ActionUtils->menu with ("About" and this::about)
+    Invoke menu->add with help
+    
+    Invoke setJMenuBar with menu
+    
+    // Add the key events for rotating. As the main frame, we add a KeyEventDispatcher to get
+    // key events no matter what is in focus
+    Let manager, a KeyboardFocusManager, be KeyboardFocusManager->getCurrentKeyboardFocusManager
+    Invoke manager->addKeyEventDispatcher with this
+    
+    // Create and add the root panel, using no layout (custom positioning)
+    Let root be a new JPanel
+    Invoke root->setLayout with null
+    Invoke getContentPane->add with root
+    
+    Let game be a new Battleship
+    
+    // Make the two BattleshipBoardDisplays, one for each player
+    Let displays be a new BattleshipBoardDisplay[2]
+    
+    // Player 1
+    Let displays[0] be a new BattleshipBoardDisplay with game and 0
+    Let displays[0]->onHover be this->previewPlaceShip
+    Let displays[0]->onFire be this->placeShip
+    Invoke root->add with displays[0]
+    
+    / Player 2
+    Let displays[1] be a new BattleshipBoardDisplay with game and 1
+    Let displays[1]->onHover be this->previewPlaceShip
+    Let displays[1]->onFire be this->placeShip
+    Invoke root->add with displays[1]
+    
+    // Register the custom layout manager we use for the board displays
+    // For more details, see doBoardLayout
+    Invoke addComponentListener with a new ComponentAdapter with:
+        componentResized -> doBoardLayout
+End
+
+Method startNewGame
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: None
+Outputs: Starts a new Battleship game
+Description:
+    Starts a new game, gives it to the displays, hooks
+    up the event handler used for placing ships, and repaints
+Begin
+    Let game be a new Battleship
+    
+    Let displays[0]->game be displays[1]->game be game
+    Let displays[0]->onHover be displays[1]->onHover be this->previewPlaceShip
+    Let displays[0]->onFire be displays[1]->onFire be this->placeShip
+    Let displays[0]->allShipsPlaced be displays[1]->allShipsPlaced be false
+    
+    Invoke displays[0]->repaint
+    Invoke displays[1]->repaint
+    
+    // Make a new AI if we're using AI
+    If isPlayingAI:
+        Let ai be a new BattleshipAI
+End
+
+Method dispatchKeyEvent
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The KeyEvent to process
+Outputs: Uses 'a' to rotate backward and 'd' to rotate forward
+Description:
+    Modifies the BattleshipGame's rotation on 'a' and 'd' keypress
+    events. Returns false to allow further processing
+Begin
+    // Only process key press events, not up or down events
+    If e->getID is equal to KeyEvent->KeyPressed:
+        If e->getKeyCode is equal to KeyEvent->VkA:
+            // Move forward 3 to move back 1
+            Let rotation be (rotation plus 3) modulo 4
+        Otherwise, If e->getKeyCode is equal to KeyEvent->VkD:
+            Let rotation be (rotation plus 1) modulo 4
+    Return false
+End
+
+Method fire
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The x and y coordinates the user is firing on
+Outputs: Fires, shows a message if the user sinks a ship, and invokes win if neccessary
+Description:
+    Fires at the indicated coordinates
+    If the result is NoResult, continues
+    If the result is SunkShip, show a message
+    If the result is Win, invoke win
+    Simulates AI if required
+Begin
+    // Make the move
+    Let result, a BattleshipMove, be game->fire with x and y
+    
+    // Play the sound if it hit
+    If game->hitmaps[game.turn][x][y] is equal to HitmapCell->HitShip:
+        Invoke AudioUtils->play with "fire.wav"
+    
+    If result is equal to BattleshipMove->SunkShip:
+        Show a message
+    Otherwise, If result is equal to BattleshipMove->Win:
+        Invoke win
+        Return
+    
+    // Make a move as the AI if required
+    If isPlayingAI is equal to true:
+        If (ai->fire with game) is equal to BattleshipMove->Win:
+            Invoke win
+            Return
+    
+    // Repaint the board
+    Invoke displays[0]->repaint
+    Invoke displays[1]->repaint
+End
+
+Method placeShip
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The x and y coordinates the user would like to place the next ship at
+Outputs: Undoes any previews in progress, then places the ship
+Description:
+    First, sets displays[game.turn].game to game to undo previews
+    Then, places the ship
+    If all ships are placed, hooks up fire to onFire and removes the hover handler
+Begin
+    // Undo any preview operations
+    Let displays[game->turn]->game be game
+    
+    // Place the ship
+    Invoke game->placeShip with x, y, and rotation
+    
+    // If playing as an AI AND the user's placement succeeded
+    If isPlayingAI and game->turn is equal to 1:
+        Invoke ai->placeShip with game
+    
+    Invoke displays[0]->repaint
+    Invoke displays[1]->repaint
+    
+    // If all ships are placed, start the game
+    If game->allShipsPlaced is equal to true:
+        Let displays[0]->onHover be displays[1]->onHover be null
+        Let displays[0]->onFire be displays[1]->onFire be this->place
+        Let displays[0]->allShipsPlaced be displays[1]->allShipsPlaced be true
+End
+
+Method previewPlaceShip
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The x and y co-ordinates the user is hovering over
+Outputs: "Previews" the ship placement by cloning the board, placing the ship, and displaying the new board
+Description:
+    Used to let the user preview their ship's placement
+    It clones the board, places the ship, and sets the BattleshipBoardDisplay to display the clone
+Begin
+    // Clone the game's state and display it with the changes
+    Let clone, a Battleship, be game->cloneState
+    Invoke clone->placeShip with x, y, and rotation
+    // Fix the clone's turn; otherwise the board won't display the ships
+    Let clone->turn be game->turn
+    Let displays[game->turn]->game be clone
+    Invoke displays[game->turn]->repaint
+End
+
+Method doBoardLayout
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: None
+Outputs: Redoes the board layout calculations
+Description:
+    Invoked on resize; places the BattleshipBoardDisplays using setBounds
+    It tries to allocate 1/3 of the horizontal space to each board
+Begin
+    // First, figure out the base "unit." This should be 1/6 of the board size,
+    // which will be the vertical size or 1/9 of the horizontal size, whichever is bigger
+    Let unit, an int, be Math->max with (root->getHeight divided by 3) and (root->getWidth divided by 9)
+    Let boardSz, an int, unit times 3
+    
+    // Calculate the vertical position
+    Let vpos, an int, be (root->getHeight minus boardSz) divided by 2
+    
+    If vpos is less than 2:
+        // The board has been resized oddly. Keep using the boardSz derived from the height,
+        // but center using the width. This works pretty well, but not perfectly, for
+        // window sizes with very little vertical room
+        Let unit be root->getWidth divided by 9
+    
+    // Now, position the boards. Each will be unit*3 by unit*3 size
+    // Padding will be distributed unit - board - unit - board - unit
+    Invoke displays[0]->setBounds with unit, vpos, boardSz, and boardSz
+    Invoke displays[1]->setBounds with unit times 4, vpos, boardSz, and boardSz
+    
+    // That was easy. 7 LOC of layout code. Absolutely the thing to write a custom
+    // layout function for
+End
+
+Method selectGameType
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: Opens a dialog to let the user choose
+Outputs: When complete, user's response goes to gameTypeSelected
+Description:
+    Opens a SelectGameType wired to gameTypeSelected to
+    allow the user to select the type of game they want to play
+Begin
+    Let dialog, a SelectGameType, be a new SelectGameType with this
+    Let dialog's onComplete be this->gameTypeSelected
+    Invoke dialog->setVisible be true
+End
+
+Method gameTypeSelected
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: Receives the user's choice as a Boolean
+Outputs: Records the user's choice in isPlayingAI
+Description:
+    Receives whether or not the user chose to play against the AI
+    from the SelectGameType; records this in isPlayingAI
+Begin
+    Let isPlayingAI be choice
+    If isPlayingAI and ai is equal to null:
+        Let ai be a new BattleshipAI
+End
+
+Method win
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: Uses the game's state
+Outputs: Shows an appropriate win or loss dialog based on the game state
+Description:
+    If playing AI and game's turn is 1 -> you lose
+    Otherwise, show player X wins
+Begin
+    // Unhook the fire event
+    Let displays[0]->onFire be displays[1]->onFire be null
+    
+    // Repaint the board
+    Invoke displays[0]->repaint
+    Invoke displays[1]->repaint
+    
+    // The image and message to display
+    Let image, a JLabel, be null
+    Let message, a String, be ""
+    
+    If isPlayingAI is equal to true and game->turn is equal to 1:
+        // The AI won
+        Let image be a new JLabel with ImageUtils->loadIcon with ("lose.png")
+        Let message be "You Lose!!!"
+        
+        // Play the lose sound
+        Invoke AudioUtils->play with "lose.wav"
+    Otherwise, is game->turn is equal to 1:
+        // Player 2 won
+        Let image be a new JLabel with ImageUtils->loadIcon with ("player2win.png")
+        Let message be "Player 2 Wins!!!"
+        
+        // Play the win sound
+        Invoke AudioUtils->play with "flourish.wav"
+    Otherwise:
+        // Player 1 won
+        Let image be a new JLabel with ImageUtils->loadIcon with ("player1win.png")
+        Let message be "Player 1 Wins!!!"
+        
+        // Play the win sound
+        Invoke AudioUtils->play with "flourish.wav"
+    
+    // Display the dialog using JOptionPane
+    Invoke JOptionPane->showMessageDialog with this, image, message, and JOptionPane->PlainMessage
+End
+
+Method help
+Name: Sam Haskins
+Date: 11/28/2018
+Inputs: None
+Outputs: Displays the user guide PDF; if this fails, allows the user to download Adobe Reader
+Description:
+    Uses Desktop->open to open "Battleship-Guide.pdf" from the same directory
+    If this fails, asks the user if they'd like to download Adobe Reader, and, if so,
+    opens Adobe's web site
+Begin
+    Let desktop, a Desktop, be Desktop->getDesktop
+    Try to:
+        // Make sure the user guide exists
+        Let guide, a File, be a new File with "Battleship-Guide.pdf"
+        If guide->isFile is equal to false:
+            Invoke JOptionPane->showMessageDialog with this, a message, "File not found",
+                                                       and JOptionPane->WarningMessage
+            Return
+        
+        // The guide exists; try to open it
+        Invoke desktop->open with guide
+    If that fails:
+        // The user must not have an application to open PDFs - offer to download adobe reader
+        Let choice, an int, be JOptionPane->showConfirmDialog with this, a message, "Download PDF reader?",
+                                                                   and JOptionPane->YesNoOption
+        If choice is equal to JOptionPane->YesOption:
+            Try to:
+                Invoke desktop->browse with a new URI with 
+                    "https://get.adobe.com/reader/completion/?installer=Reader_DC_2019.008.20081_English_for_Windows&stype=7765&direct=true&standalone=1" 
+            If that fails:
+                // A platform without a browser. Interesting. Tell the user
+                Invoke JOptionPane->showMessageDialog with this, a message, "An error occurred",
+                                                           and JOptionPane->ErrorMessage 
+End
+
+Method about
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: None
+Outputs: Shows an about dialog
+Description:
+    Invoked by Help -> About. Shows an AboutDialog for Battleship
+Begin
+    // Create the dialog
+    Let dialog, an AboutDialog, be a new AboutDialog with this, (ImageUtils->loadIcon with "icon.png"),
+                                                          "Battleship", a description, "Sam Haskins",
+                                                          "1.1", and extra information
+    // Show the dialog
+    Invoke dialog->setVisible with true
+End
+
+Method exit
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: None
+Outputs: Exits BattleshipGame
+Description:
+    Posts a window closing message to the queue to exit BattleshipGame
+Begin
+    Invoke dispatchEvent with a new WindowEvent with (this and WindowEvent->WindowClosing)
+End

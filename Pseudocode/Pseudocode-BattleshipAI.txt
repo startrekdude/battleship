@@ -1,0 +1,315 @@
+A simple yet robust AI to simulate a Battleship player
+Developers are strongly encouraged to read AINOTE.txt for many more details
+
+// State of the search algorithm
+private int currentQuadrant is 0
+
+// State of the fire algorithm
+// -1 if not currently sinking a ship
+private int shipX is -1
+private int shipY is -1
+private int currentShipX is -1
+private int currentShipY is -1
+private int originalDeltaX is -999
+private int originalDeltaY is -999
+private int deltaX is -999
+private int deltaY is -999
+private Boolean hasAttemptedInvertDelta is false
+
+// Private state of establishDelta. Stops it from searching up-down-up-down infinitely
+private int lastDirection is -1
+
+Method placeShip
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The game to place a ship on, a Battleship
+Outputs: Places a ship on the game's board
+Description:
+    Randomly places a ship, using a random rotation, on
+    the Battleship board. See AINOTE for rationale
+Begin
+    Declare integers named x, y, and r
+    Do
+        Let x be RandomUtils->range with 0 and 9
+        Let y be RandomUtils->range with 0 and 9
+        Let r be RandomUtils->range with 0 and 3
+    While game->placeShip with x, y, and r is equal to false
+    Return
+End
+
+Method fire
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The game to fire using
+Outputs: The result of the fire operation
+Description:
+    Determines whether the AI is currently sinking a ship,
+    and calls search or sink appropriately (see AINOTE)
+Begin
+    If shipX is equal to -1:
+        Return search with game
+    Else:
+        Return sink with game
+End
+
+Method invertDelta
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The game and the AI's state
+Outputs: Attempts to proceed the other direction in the same axis from the origin of the ship
+Description:
+    Called when the AI, after finding the direction of a ship and proceeding along it,
+    cannot finish the ship. Returns to the origin and goes in the other direction
+Begin
+    Let hasAttemptedInvertDelta be true
+    // Try to "invert the delta," i.e. proceed in the opposite direction on the same axis
+    Let newDeltaX, an int, be equal to minus originalDeltaX
+    Let newDeltaY, an int, be equal to minus originalDeltaY
+    // Start from the origin, not the current position
+    Let newShipX, an int, be equal to shipX plus newDeltaX
+    Let newShipY, an int, be equal to shipY plus newDeltaY
+    
+    // If this puts us off the screen, try something different
+    If newShipX is less than 0 or newShipX is greater than 9 or
+       newShipY is less than 0 or newShipY is greater than 9:
+       Return sink with game
+    
+    // Possible we fired here when searching for a delta; if so, don't do it again
+    If game->hitmaps[0][newShipX][newShipY] is not equal to HitmapCell->Empty:
+        Return sink with game
+    
+    Let result, a BattleshipMove, be game->fire with newShipX and newShipY
+    If game->hitmaps[0][newShipX][newShipY] is equal to HitmapCell->HitShip:
+        // The gambit succeeded; record the state
+        Let currentShipX be newShipX
+        Let currentShipY be newShipY
+        Let deltaX be newDeltaX
+        Let deltaY be newDeltaY
+    Return result
+End
+
+Method establishDelta
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The game to try and establish a delta for, the x and y coordinates to start from
+Outputs: Updates deltaX and deltaY and possibly originalDeltaX and originalDeltaY. Returns the move result
+Description:
+    Attempts to figure out what direction a ship is going in. Checks, in order
+    above, to the left, below, to the right
+    (please see AINOTE)
+Begin  
+    // The co-ordinate difference to try
+    Let xDelta, an int, be 0
+    Let yDelta, an int, be 0
+    
+    // Find an empty space to shoot at
+    If y is not equal to 9 and game->hitmaps[0][x][y plus 1] is equal to HitmapCell->Empty:
+        // Above
+        Let yDelta be 1
+    Otherwise, If x is not equal to 0 and game->hitmaps[0][x minus 1][y] is equal to HitmapCell->Empty:
+        // Left
+        Let xDelta be -1
+    Otherwise, If y is not equal to 0 and game->hitmaps[0][x][y minus 1] is equal to HitmapCell->Empty:
+        // Below
+        Let yDelta be -1
+    Otherwise, If x is not equal to 9 and game->hitmaps[0][x + 1][y] is equal to HitmapCell->Empty:
+        // Right
+        Let xDelta be 1
+    
+    Declare result, a BattleshipMove
+    
+    // If we haven't found a delta, find a delta from an adjacent hit cell
+    If xDelta is equal to yDelta is equal to 0:
+        For every index 0 to 3 (i):
+            // Guard against searching up-down-up-down-up-down infinitely
+            If lastDirection is not equal to -1 && (lastDirection plus 2) modulo 4 is i:
+                Continue
+                
+            If i is equal to 0 and y is not equal to 9 and game->hitmaps[0][x][y plus 1] is equal to HitmapCell->HitShip:
+                // Try the above cell
+                Let lastDirection be i
+                Let result be establishDelta with game, x and y plus one
+            Otherwise, if i is equal to 1 and x is not equal to 0 and game->hitmaps[0][x minus 1][y] is equal to HitmapCell->HitShip:
+                // Try the cell to the left
+                Let lastDirection be i
+                Let result be estasblishDelta with game, x minus 1 and y
+            Otherwise, if i is equal to 2 and y is not equal to 0 and game->hitmaps[0][x][y minus 1] is equal to HitmapCell->HitShip:
+                // Try the cell below
+                Let lastDirection be i
+                Let result be estasblishDelta with game, x and y minus 1
+            Otherwise, if i is equal to 3 and x is not equal to 9 and game->hitmaps[0][x + 1][y] is equal to HitmapCell->HitShip:
+                // Try the cell to the right
+                Let lastDirection be i
+                Let result be establishDelta with game, x plus 1 and y
+            // If, at any point, we found a free cell and made a delta, return the result
+            If result is not equal to null:
+                Return Result
+        // That didn't succeed; return null to allow a method higher in the stack to look in another
+        // direction. If this can't find a new delta, sink will escape and try search instead
+        Return null
+    
+    // Make the move and see if it hits
+    Let result be game->fire with x plus xDelta and y plus yDelta
+    // If it hit, update the state
+    If game->hitmaps[0][x + xDelta][y + yDelta] is equal to HitmapCell->HitShip:
+        Let deltaX be xDelta
+        Let deltaY be yDelta
+        Let currentShipX be be x + xDelta
+        Let currentShipY be y + yDelta
+        Let lastDirection be -1
+        If originalDeltaX is equal to -999:
+            Let originalDeltaX be xDelta
+            Let originalDeltaY be yDelta
+    Return result
+End
+
+Method sink
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The game, and also uses the AI's state
+Outputs: Attempts to sink a discovered ship; returns the move's result
+Description:
+    This algorithm is rather complex and is explained best in AINOTE
+    In a nutshell, it attempts to find the axis the ship is on and sink it
+Begin
+    Declare result, a BattleshipMove
+    
+    // When we start finding a new ship (no ship in progress), set currentShipX and Y
+    If currentShipX is equal to -1:
+        Let currentShipX be shipX
+        Let currentShipY be shipY
+    
+    If hasAttemptedInvertDelta is false and originalDeltaX is not equal to -999 and deltaX is equal to -999:
+        Let result be invertDelta with game
+    // Find a new delta; it's our main strategy
+    Otherwise, if deltaX is equal to -999:
+        Try to:
+            Let result be establishDelta with game, shipX, and shipY
+        Except StackOverflowError:
+            // It's stuck somewhere and can't find any new squares
+            // a human would be able to deal with this, but the AI can't
+            // Return to search mode and find a new ship to sink
+            Let shipX be shipY be -1
+            Let deltaX be deltaX be -999
+            Let originalDeltaX be originalDeltaY be -999
+            Let hasAttemptedInvertDelta be false
+            Return search with game
+    Otherwise:
+        // We have a delta and there's no special strategies to try. Follow it
+        Increase currentShipX by deltaX
+        Increase currentShipY by deltaY
+        
+        // If this puts us off the board, try something else
+        If currentShipX is less than 0 or currentShipX is greater than 9
+           or currentShipY is less than 0 or currentShipY is greater than 9:
+           Let deltaX be deltaY be -999
+           Return sink with game
+        
+        // If we already know that the next square isn't a ship hit, try again
+        If game->hitmaps[0][currentShipX][currentShipY] is not equal to HitmapCell->Empty:
+            Let deltaX be deltaY be -999
+            Return sink with game
+        
+        Let result be game->fire with currentShipX and currentShipY
+        If game->hitmaps[0][currentShipX][currentShipY] is not equal to HitmapCell->HitShip:
+            // This didn't work; try something new next time
+            Let deltaX be deltaY be -999
+    
+    // We've made a move; check the result
+    If result is equal to BattleshipMove->SunkShip or result is null:
+        // Reset state and return to search pattern
+        Let shipX be shipY be -1
+        Let deltaX be deltaX be -999
+        Let originalDeltaX be originalDeltaY be -999
+        Let hasAttemptedInvertDelta be false
+        If result is equal to null:
+            // We didn't find a square to check; do search
+            Let result be search with game
+    Return result
+End
+
+Method findFireOptions
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The game and the quadrant to find the fire options for
+Outputs: A list of eligible positions to fire in the quadrant
+Description:
+    Used when searching; eligible squares would be white on a checkerboard
+    and have not been fired upon previously
+Begin
+    // The offset of coordinates in the quadrant
+    Let offsetX, an int, be 0
+    Let offsetY, an int, be 0
+    
+    // This is a private method; the caller guarantees the quadrantIndex is 0 - 3
+    // and we don't need to deal with 0 because offsetX and offsetY are zero by default
+    Switch on quadrantIndex:
+    Case 1:
+        Let offsetX be 5
+        Break
+    Case 2:
+        Let offsetY be 5
+        Break
+    Case 3:
+        Let offsetX be offsetY be 5
+        Break
+    
+    // Store eligible coordinates
+    Let options, a List of int[], be a new ArrayList of int[]
+    
+    // Loop over every coordinate in a 5-by-5 grid
+    For every index offsetX to offsetX plus 4 (i):
+        For every index offsetY to offsetY plus 4 (j):
+            // Make sure it's white on a checkerboard
+            If i modulo 2 is equal to j modulo 2:
+                // Make sure it hasn't been fired upon previously
+                If game->hitmaps[0][i][j] is equal to HitmapCell->Empty:
+                    Invoke options add with a new int[] with i and j
+    Return options   
+End
+
+Method search
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The game to search for a ship on
+Outputs: The result of the search move the AI decides on
+Description:
+    Searches for a ship in the current quadrant, then advances to the next
+    If there's no place to fire in the current quadrant, uses the next
+    If there's no place to fire anywhere, fire randomly
+    (seriously read AINOTE)
+Begin
+    // The decided move x and y coordinates
+    Let x, an int, be -1
+    Let y, an int, be -1
+
+    // Start by trying each quadrant, starting at the current quadrant
+    For every index from currentQuadrant to currentQuadrant plus three (i):
+        // Find the fire options for the quadrant currently being operated on
+        // (We use modulo four because if we started at 3 it loops back around easily)
+        Let fireOptions, a List of int[], be findFireOptions with game and i % 4
+        If fireOptions->size is not equal to 0:
+            // Fire on the quadrant
+            Let pos, an int[], be RandomUtils->choice with fireOptions
+            Let x be pos[0]
+            Let y be pos[1]
+            Break
+    
+    // Advance to the next quadrant
+    Let currentQuadrant be (currentQuadrant plus 1) modulo 4
+    
+    // If there were no available positions in the checkboard, pick one at random
+    If x is equal to -1:
+        Do
+            Let x be RandomUtils->range with 0 and 9
+            Let y be RandomUtils->range with 0 and 9
+        While game->hitmaps[0][x][y] is not equal to HitmapCell->Empty
+    
+    // Fire. If we hit a ship, mark it
+    Let result, a BattleshipMove, be game->fire with x and y
+    If game->hitmaps[0][x][y] is equal to HitmapCell->HitShip:
+        Let shipX be x
+        Let shipY be y
+    
+    Return result
+End

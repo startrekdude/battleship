@@ -1,0 +1,62 @@
+A set of utilities that help to create Swing GUI elements
+associated with specific Runnable's as their corresponding actions
+Ex:
+    ActionUtils->menu ("Save", CustomWindow::Save) returns a JMenuItem
+    ActionUtils->button ("Save, CustomWindow::Save) returns a JButton
+These items also print the name of the action invoked to the console, though
+this behavior is configurable using printActions
+
+static Boolean printActions is true
+
+Method menu
+Name: Sam Haskins
+Date: 11/2/2018
+Inputs: The desired text and the action to be run
+Outputs: A JMenuItem with the desired text that runs the action when selected
+Description:
+    An easy and quick way to create menu items that invoke functions, no
+    dispatcher intermediate needed! Additionally, if printActions is true,
+    prints the action's name when invoked
+Begin
+    If text is null or action is null:
+        Throw a new IllegalArgumentException
+    
+    Let item, a JMenuItem, be a new JMenuItem with text
+    Invoke item->addActionListener with a lambda expression:
+        (ActionEvent e) -> Invoke action->run
+    If printActions
+        Invoke item->addActionListener with ActionUtils->printAction
+    Return item
+End
+
+Method button
+Name: Sam Haskins
+Date: 11/2/2018
+Inputs: The desired text and the action to be run
+Outputs: A JButton with the desired text that runs the action when selected
+Description:
+    Creates a JButton that runs a specific Runnable when invoked. Also,
+    if printActions is true, prints the action's name when invoked
+Begin
+    If text is null or action is null:
+        Throw a new IllegalArgumentException
+
+    Let button, a JButton, be a new JButton with text
+    Invoke button->addActionListener with a lambda expression:
+        (ActionEvent e) -> Invoke action->run
+    If printActions:
+        Invoke item->addActionListener with ActionUtils->printAction
+    Return button
+End
+
+Method printAction
+Name: Sam Haskins
+Date: 11/2/2018
+Inputs: An ActionEvent detailing the action to be printed
+Outputs: Prints the action to the console
+Description:
+    Receives events from components created by ActionUtils
+    Prints the action that occurred to the console
+Begin
+    Print e->getActionCommand
+End

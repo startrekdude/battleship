@@ -1,0 +1,241 @@
+A component that displays a player's Battleship board. It conceptually contains
+an 11-by-11 grid within its bounds, and draws in three stages:
+    - The grid lines and 1-10, A-J labels
+    - The hitmap (grey for hit, red for hit ship)
+    - Only if it's the player's turn: the board
+When the  player clicks on a sqaure that is part of the board, dispatches onFire
+
+private int player
+// Uses instead of game->allShipsPlaced because of the clone during preview
+package-private Boolean allShipsPlaced
+package-private Battleship game
+
+// Use to preview ship places
+public BiConsumer<int, int> onHover
+// Used to place ships and fire
+public BiConsumer<int, int> onFire
+
+Constructor
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The player and game to display
+Outputs: A BattleshipBoardDisplay ready to display a player's boards
+Description:
+    First, ensures player is 0 or 1 and throws IllegalArgumentException if it isn't
+    Then, creates a BattleshipBoardDisplay with the requested data
+Begin
+    If player is not equal to 0 and player is not equal to 0
+        Throw a new IllegalArgumentException
+    If game is equal to null:
+        Throw a new NullPointerException
+    
+    Let this's player be player
+    Let this's game be game
+    Let allShipsPlaced be false
+    
+    // Register a mouse adapter; hover is used to preview placing ships, and
+    // click is used to place ships and fire
+    Let adapter be a new MouseInputAdapter:
+        mouseMoved (e) -> Invoke onMouseMove with e
+        mouseClicked (e) -> Invoke onMouseClick with e
+    Invoke addMouseInputListener with adapter
+    Invoke addMouseListener with adapter
+End
+
+Method onMouseClick
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The mouse click event
+Outputs: Gives the current mouse coordinates to the consumer via onFire
+Description:
+    Uses fireMouseEvent to return the grid cell clicked to the consumer
+    When placing ships, user must click on own cell
+    When firing, user must click on opponent's heatmap
+Begin
+    // Check to see if the consumer cares about the click event
+    If onFire is not equal to null:
+        // When placing ships, player will click own board
+        If game->turn is equal to player and allShipsPlaced is equal to false:
+            Invoke fireMouseEvent with e and onFire
+        // When firing, you must click on the opponent's board
+        Otherwise, If game->turn is not equal to player and allShipsPlaced is equal to true:
+            Invoke fireMouseEvent with e and onFire
+        Otherwise, If allShipsPlaced is equal to true:
+            // Indicate that you must click on the opponent's board to fire
+            Show a message
+End
+
+Method onMouseMove
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The mouse move event
+Outputs: Gives the current mouse coordinates to the consumer via onHover
+Description:
+    Invokes fireMouseEvent (e, onHover) to calculate the grid square the mouse is on,
+    and give it to the consumer
+Begin
+    If onHover is not equal to null and game.turn is equal to player:
+        Invoke fireMouseEvent with e and onHover
+End
+
+Method fireMouseEvent
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The mouse move event and a function to give the co-ordinates to
+Outputs: Calculates the co-ordinates referred to by the mouse event and, if they are on the board, gives them to callback
+Description:
+    Calculates the board co-ordinates referred to by the mouse event
+    If they are on the battleship board (i.e. not the labels, etc), return them
+Begin
+    // Ensure callback is not null
+   If callback is equal to null:
+       Throw a new NullPointerException
+
+   Let sz, an int, be getWidth divided by 11
+   Let x, an int, be e->getX divided by sz
+   Let y, an int, be e->getY divided by sz
+   Decrement x
+   Decrement y
+   If x is greater than or equal to 0 and y is greater than or equal to 0 and
+      x is less than or equal to 9 and y is less than or equal to 9:
+       Invoke callback->accept with x and y 
+End
+
+Method paintComponent
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The Graphics object to paint to
+Outputs: Paints, using other methods, the complete Battleship board
+Description:
+    Calculates the cell size, then paints:
+        1) The lines and 0-9 A-J labels
+        2) The hitmap
+        3) (only if it's player's turn) The board
+Begin
+   Let sz, an int, be getWidth divided by 11
+   
+   // Turn on antialiasing
+   Invoke g->setRenderingHint with RenderingHints->KeyAntialias and RenderingHints->ValueAntialiasOn
+   
+   // Draw a simple white background
+   Invoke g->setColor with Color->White
+   Invoke g->fillRect with 0, 0, getWidth, and getHeight
+   
+   Invoke drawHitmap with g and sz
+   Invoke drawBaseGrid with g and sz 
+   
+   // Only draw the ships if it's the players turn
+   If game->turn is equal to player:
+    Invoke drawBoard with g and sz
+End
+
+Method drawShips
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The Graphics to draw to and the grid cell size
+Outputs: Draws the player's ships to the component
+Description:
+    Draws the position of the player's ships to the Graphics objects
+    Represents ships cell with a letter
+Begin
+    // Use black
+    Invoke g->setColor with Color->Black
+    // Retrieve the board
+    Let board, a BattleshipCell[][], be game->boards[player]->board
+    
+    // Go over every cell
+    For every index 0-9 (i):
+        For every index 0-9 (j):
+            Let cell, a BattleshipCell, be board[i][j]
+            If cell is not equal to BattleshipCell->Empty:
+                // Use the first letter of the ship name as a symbol
+                Let symbol, a String, be cell->toString->charAt with 0
+                // Draw the symbol
+                Invoke gridDrawString with g, sz, i plus 1, j plus 1, and symbol
+End
+
+Method drawHitmap
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The Graphics to draw to and the grid cell size
+Outputs: Draws the player's hitmap to the component
+Description:
+    Draws the player's hitmap to the component. Uses
+    grey for hit and red for hit ship
+Begin
+    Let hitmap, a HitmapCell[][], be game->hitmaps[player]
+    For every index 0-9 (i):
+        For every index 0-9 (j):
+            Let cell, a HitmapCell be hitmap[i][j]
+            Switch cell:
+            Case HitmapCell->Empty:
+                Invoke g->setColor with Color->White
+                Break
+            Case HitmapCell->Hit:
+                Invoke g->setColor with Color->LightGray
+                Break
+            Case HitmapCell->HitShip:
+                Invoke g->setColor with Color->Red
+                Break
+            Invoke g->fillRect with sz times (i plus 1), sz times (j plus 1), sz, and sz
+End
+
+Method gridDrawString
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The Graphics object to paint to, the cell size, the x and y positions of the cell, the String to draw
+Outputs: Draws the String, centered and at an appropriate size, to the grid cell
+Description:
+    First, calculates an appropriate font size for the String
+    Then, draws the String in the cell, centered vertically and horizontally
+Begin
+    // Create a font of appropriate size
+    Let fontSize, an int, be sz times Toolkit->getDefaultToolkit->getScreenResolution divided by 96
+    
+    // Fix the font size
+    Let fontSize be fontSize divided by s->length
+    
+    Let font, a Font, be a new Font with "Sans", Font->Plain, and fontSize
+    
+    // Calculate the centered position
+    Let metrics, a FontMetrics, be g->getFontMetrics with font
+    
+    Let newX, an int, be sz times x plus (sz minus metrics->stringWidth with s) divided by 2
+    Let newY, an int, be sz times y plus ((sz minus metrics->getHeight) divided by 2) plus metrics->getAscent
+    
+    Invoke g->setFont with font
+    
+    Invoke g->drawString with s, newX, and newY
+End
+
+Method drawBaseGrid
+Name: Sam Haskins
+Date: 11/16/2018
+Inputs: The Graphics object to paint to, the cell size
+Outputs: Paints the grid lines and 0-10 A-J labels onto the component
+Description:
+    Paints the grid lines and the coordinate labels onto the
+    Graphics object. Called from paintComponent
+Begin
+    Invoke g->setColor with Color->Black
+    
+    // Use really thin lines
+    Invoke g->setStroke with a new BasicStroke with 0.2
+    
+    Let currentNum, an int, be 1
+    Let currentChar, a char, be 'A'
+    For every index 1 - 11 (i):
+        // Draw from (sz, sz*i) to (sz*11, sz*i)
+        // and (sz*i, sz) to (sz*i, sz*11)
+        Invoke g->drawLine with sz, sz times i, sz times 11, and sz times i
+        Invoke g->drawLine with sz times i, sz, sz times i, and sz times 11
+        
+        // Draw the characters
+        If i is not equal to 11:
+            Invoke gridDrawString with g, sz, 0, i, and Integer->toString with (currentNum)
+            Invoke gridDrawString with g, sz, i, 0, and currrentChar
+        
+        Increment currentNum
+        Increment currentChar
+End
+

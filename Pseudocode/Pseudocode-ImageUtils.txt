@@ -1,0 +1,28 @@
+The code for loading an image resource in Swing is really, really long.
+This class makes it easy! Get awt.Image or swing.Icon from an image resource
+file name
+
+Method load
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The name of the Image to load
+Outputs: The Image, loaded from the jar or Eclipse rsrc folder
+Description:
+    Loads an image asset and returns it to the consumer
+Begin
+    Let path, a URL, be getClass->getClassLoader->getResource with name
+    Return Toolkit->getDefaultToolkit->getImage with path
+End
+
+Method loadIcon
+Name: Sam Haskins
+Date: 11/15/2018
+Inputs: The name of the Icon to load
+Outputs: A Swing Icon, loaded from the jar or Eclipse rsrc folder
+Description:
+    Some libraries accept Image objects and some accept Icon objects.
+    This wraps the Image in an ImageIcon that implements Icon and
+    returns it
+Begin
+    Return a new ImageIcon with load with (name)
+End

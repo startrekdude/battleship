@@ -1,0 +1,28 @@
+Utilities for playing audio clips stored in the application's resources
+
+Method play
+Name: Sam Haskins
+Date: 11/18/2018
+Inputs: The name of the resource to play
+Outputs: Plays the audio resource
+Description:
+    Plays the audio resource with the specified resource name
+    Does nothing if errors are encountered
+Begin
+    // First, find the resource
+    Let path, a URL, be getClass->getClassLoader->getResource with name
+    
+    Try to:
+        // Open the input stream
+        Let stream, an AudioInputStream, be AudioSystem->getAudioInputStream with path
+        
+        // Create and play the clip
+        Let clip, a Clip, be AudioSystem->getClip
+        Invoke clip->open with stream
+        Invoke clip->start
+    
+        // Clip will release resources as required
+    If that fails:
+        // Oh well, we tried. This shouldn't happen for resources *in* the jar, anyways
+        Return
+End
