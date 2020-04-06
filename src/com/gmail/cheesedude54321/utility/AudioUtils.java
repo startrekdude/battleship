@@ -20,17 +20,22 @@ import javax.sound.sampled.Clip;
  *     Utilities for playing audio clips stored in the application's resources
  */
 public final class AudioUtils {
-    
+    // Global option to mute playback
+	public static Boolean mute = false;
+	
     /*
      * Name: Sam Haskins
-     * Date: 11/18/2018
+     * Date: 4/5/2020
      * Inputs: The name of the resource to play
      * Outputs: Plays the audio resource
      * Description:
      *     Plays the audio resource with the specified resource name
      *     Does nothing if errors are encountered
+     *     Does nothing if muted (mute is true)
      */
     public static void play(String name) {
+    	if (mute) return;
+    	
         // First, find the resource
         URL path = new AudioUtils().getClass().getClassLoader().getResource(name);
         

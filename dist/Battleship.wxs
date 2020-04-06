@@ -1,14 +1,16 @@
 <?xml version='1.0' encoding='windows-1252'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
     <Product Name='Battleship' Manufacturer='Sam Haskins'
-        Id='026375B9-7C91-4860-B5A4-813C5E327D94' 
+        Id='3B3D8FBB-4829-49BB-85BA-906DC2BB5871' 
         UpgradeCode='F1DF0854-96AB-452E-9C1E-4A65E39DD7D9'
-        Language='1033' Codepage='1252' Version='1.1.1'>
+        Language='1033' Codepage='1252' Version='1.1.2'>
 		
-		<Package Id='*' Description="Sam Haskins's Battleship 1.1.1 Installer"
+		<Package Id='*' Description="Sam Haskins's Battleship 1.1.2 Installer"
 			Manufacturer='Sam Haskins' InstallerVersion='200' Languages='1033'
 			Compressed='yes' SummaryCodepage='1252' />
 		<Media Id="1" Cabinet="Battleship.cab" EmbedCab="yes" />
+		<MajorUpgrade
+			DowngradeErrorMessage="A later version of Battleship is already installed. Setup will now exit" />
 		
 		<Directory Id='TARGETDIR' Name='SourceDir'>
 			<Directory Id="ProgramFiles64Folder">

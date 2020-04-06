@@ -15,6 +15,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.net.URI;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -87,6 +88,12 @@ public final class BattleshipGame extends JFrame implements KeyEventDispatcher {
         JMenu battleship = new JMenu("Battleship");
         battleship.add(ActionUtils.menu("Select game type", this::selectGameType));
         battleship.add(ActionUtils.menu("Start new game", this::startNewGame));
+        
+        // The mute menu option
+        JCheckBoxMenuItem muteMenu = new JCheckBoxMenuItem("Mute");
+        muteMenu.addItemListener(e -> AudioUtils.mute = muteMenu.isSelected());
+        battleship.add(muteMenu);
+        
         battleship.add(ActionUtils.menu("Exit", this::exit));
         menu.add(battleship);
         
@@ -487,7 +494,7 @@ public final class BattleshipGame extends JFrame implements KeyEventDispatcher {
         // Create the dialog
         AboutDialog dialog = new AboutDialog(this, ImageUtils.loadIcon("icon.png"),
                 "Battleship", "Battleship is a fun Java Swing game", "Sam Haskins",
-                "1.1.1", "The Battleship icon is licensed from Icons8. For more" +
+                "1.1.2", "The Battleship icon is licensed from Icons8. For more" +
                 " details, please see THIRD-PARTY.txt, included in your" +
                 " distribution of Battleship.");
         // Show the dialog
